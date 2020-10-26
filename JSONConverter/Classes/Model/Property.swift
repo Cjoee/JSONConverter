@@ -56,7 +56,7 @@ class Property {
             case .Swift,.HandyJSON, .Codable:
                 propertyStr = "\tvar \(propertyKey): String?\n"
             case .SwiftyJSON:
-                propertyStr = "\tvar \(propertyKey): String?\n"
+                propertyStr = "\tvar \(propertyKey): String = \"\"\n"
                 initStr = "\t\t\(propertyKey) = json[\"\(propertyKey)\"].stringValue\n"
             case .ObjectMapper:
                 propertyStr = "\tvar \(propertyKey): String?\n"
