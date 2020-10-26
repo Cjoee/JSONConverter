@@ -73,10 +73,14 @@ class MainViewController: NSViewController {
         
         converTypeBox.addItems(withObjectValues: transTypeTitleList)
         converTypeBox.delegate = self
+        converTypeBox.isEditable = false
+        converTypeBox.isSelectable = false
         
         converStructBox.addItems(withObjectValues: structTypeTitleList)
         converStructBox.delegate = self
-        
+        converStructBox.isEditable = false
+        converStructBox.isSelectable = false
+
         classTextView.isEditable = false
         classTextView.setUpLineNumberView()
         
@@ -90,10 +94,10 @@ class MainViewController: NSViewController {
         
         let jsonStorage = JSONHightTextStorage()
         jsonStorage.addLayoutManager(JSONTextView.layoutManager!)
-        
+
         let classStorage = ClassHightTextStorage()
         classStorage.addLayoutManager(classTextView.layoutManager!)
-        
+
         let classImpStorage = ClassHightTextStorage()
         classImpStorage.addLayoutManager(classImpTextView.layoutManager!)
         
@@ -176,19 +180,34 @@ class MainViewController: NSViewController {
     }
     
     func generateClasses() {
-        if let data = JSONTextView.textStorage?.string.data(using: .utf8),
-            let JSONObject = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as AnyObject,
-            let JSONData = try? JSONSerialization.data(withJSONObject: JSONObject, options: [.prettyPrinted, .sortedKeys]),
-            let JSONString = String(data: JSONData, encoding: .utf8)?.replacingOccurrences(of: "\\/", with: "/") {
-            setupJSONTextViewContent(JSONString)
-            
-            let configFile = FileConfigManager.shared.currentConfigFile()
-            let fileString = JSONParseManager.shared.parseJSONObject(JSONObject, file:configFile)
-            setupClassTextViewContent(fileString.0)
-            setupClassImpTextViewContent(fileString.1)
-            showJSONOperateResult(true, message: "app_converter_json_success_desc".localized)
-        }else {
-            showJSONOperateResult(false, message: "app_converter_json_error_desc".localized)
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let JSONTextViewString = JSONTextView.textStorage?.string
+        DispatchQueue.global().async {
+            if let data = JSONTextViewString?.data(using: .utf8),
+                let JSONObject = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as AnyObject,
+                let JSONData = try? JSONSerialization.data(withJSONObject: JSONObject, options: [.prettyPrinted, .sortedKeys]),
+                let JSONString = String(data: JSONData, encoding: .utf8)?.replacingOccurrences(of: "\\/", with: "/") {
+                let configFile = FileConfigManager.shared.currentConfigFile()
+                let fileString = JSONParseManager.shared.parseJSONObject(JSONObject, file:configFile)
+                
+                let endTime1 = CFAbsoluteTimeGetCurrent()
+                let offsetTime1 = Int((endTime1 - startTime) * 1000)
+                print("json convert duration: \(offsetTime1)ms")
+
+                DispatchQueue.main.async {
+                    self.setupJSONTextViewContent(JSONString)
+                    self.setupClassTextViewContent(fileString.0)
+                    self.setupClassImpTextViewContent(fileString.1)
+                    self.showJSONOperateResult(true, message: "app_converter_json_success_desc".localized)
+                    let endTime2 = CFAbsoluteTimeGetCurrent()
+                    let offsetTime2 = Int((endTime2 - endTime1) * 1000)
+                    print("json display duration: \(offsetTime2)ms")
+                }
+            }else {
+                DispatchQueue.main.sync {
+                    self.showJSONOperateResult(false, message: "app_converter_json_error_desc".localized)
+                }
+            }
         }
     }
     
@@ -199,19 +218,19 @@ class MainViewController: NSViewController {
     }
     
     private func setupJSONTextViewContent(_ content: String){
-        let attrContent = NSMutableAttributedString(string: content)
+        let attrContent = NSAttributedString(string: content)
         JSONTextView.textStorage?.setAttributedString(attrContent)
     }
     
     private func setupClassTextViewContent(_ content: String) {
-        let attrContent = NSMutableAttributedString(string: content)
+        let attrContent = NSAttributedString(string: content)
         classTextView.textStorage?.setAttributedString(attrContent)
         classTextView.lineNumberView.needsDisplay = true
     }
     
     private func setupClassImpTextViewContent(_ content: String?) {
         if let content = content {
-            let attrContent = NSMutableAttributedString(string: content)
+            let attrContent = NSAttributedString(string: content)
             classImpTextView.textStorage?.setAttributedString(attrContent)
             classImpTextView.lineNumberView.needsDisplay = true
         }
@@ -265,7 +284,7 @@ extension MainViewController {
 }
 
 extension MainViewController: NSComboBoxDelegate {
-    func comboBoxSelectionDidChange(_ notification: Notification) {
+    func comboBoxWillDismiss(_ notification: Notification) {
         let comBox = notification.object as! NSComboBox
         if comBox == converTypeBox { //Choose Language
             let langType = LangType(rawValue: converTypeBox.indexOfSelectedItem)

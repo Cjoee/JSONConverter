@@ -13,6 +13,12 @@ Using JSONConverter you will be able to:
 * Custom file header include author/date etc.
 * Support i18n(English/Chinese)
 
+Important reminder
+==================
+Because there is no paid app ID, the current installation package will crash directly due to certificate problems. It is recommended that you download the code, change the bundle ID, compile it, find the app in the products directory and drag it to applicaiton. 
+
+![0.png](/Screenshots/0.png)
+
 Currently supported languages
 =============================
 - 1. Swift(Class/Struct)
@@ -49,3 +55,7 @@ Flutter model instruction links
 Final Notes
 ==========
 * The application still in its early stage. Please report any issue so I can improve it.
+
+License
+========================
+JSONConverter is available under custom version of **MIT** license.
